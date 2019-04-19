@@ -17,14 +17,13 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class WESS_Encoder(nn.Module):
     """
     Encoder
+    (pre-transformer replaced by GRU)
     """
 
     def __init__(self,
                  vocab_max_size=2000,
                  embedding_size=768,
-                 tb_hidden=768,
-                 tb_attn_heads=4,
-                 tb_feed_forward_hidden=4*768,
+
                  bert_hidden=768,
                  bert_n_layers=3,
                  bert_attn_heads=4,
