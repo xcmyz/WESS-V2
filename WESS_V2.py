@@ -7,7 +7,7 @@ from TransformerBlock import TransformerEncoderBlock as TransformerBlock
 from TransformerBlock import TransformerDecoderBlock as DecoderBlock
 from TransformerBlock import get_sinusoid_encoding_table
 # from bert_embedding import get_bert_embedding
-from layers import BERT, PreNet, LinearProjection
+from layers import BERT, LinearProjection, LinearNet_TwoLayer
 from text.symbols import symbols
 # print(len(symbols))
 
@@ -42,9 +42,6 @@ class WESS_Encoder(nn.Module):
         super(WESS_Encoder, self).__init__()
         self.vocab_max_size = vocab_max_size
         self.embedding_size = embedding_size
-        # self.tb_hidden = tb_hidden
-        # self.tb_attn_heads = tb_attn_heads
-        # self.tb_feed_forward_hidden = tb_feed_forward_hidden
         self.GRU_hidden = GRU_hidden_size
         self.GRU_num_layers = GRU_num_layers
         self.GRU_batch_first = GRU_batch_first
@@ -75,7 +72,8 @@ class WESS_Encoder(nn.Module):
                                  attn_heads=self.bert_attn_heads,
                                  dropout=self.dropout)
 
-        self.bert_post_net =
+        self.bert_post_net = LinearNet_TwoLayer(
+            self.embedding_size, self.bert_postnet_hidden, self.bert_postnet_output)
 
     def init_GRU_hidden(self, batch_size, num_layers, hidden_size):
         if self.GRU_bidirectional:
@@ -108,6 +106,7 @@ class WESS_Encoder(nn.Module):
 if __name__ == "__main__":
     # Test
     test_GRU = WESS_Encoder()
+    print(test_GRU)
     x = torch.randn(2, 180, 768)
     print("x: ", x.size())
 
