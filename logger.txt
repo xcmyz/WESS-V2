@@ -1,0 +1,21 @@
+Epoch [1/10000], Step [5/21830000], Gate Loss: 0.7496, Mel Loss: 1.5726, Total Loss: 2.3221.
+Time Used: 28.499s, Estimated Time Remaining: 94790259.410s.
+
+Epoch [1/10000], Step [5/21830000], Gate Loss: 0.7675, Mel Loss: 1.2994, Total Loss: 2.0668.
+Time Used: 30.021s, Estimated Time Remaining: 100611776.055s.
+
+Epoch [1/10000], Step [10/21830000], Gate Loss: 0.7919, Mel Loss: 0.0882, Total Loss: 0.8801.
+Time Used: 52.573s, Estimated Time Remaining: 100127733.743s.
+
+Epoch [1/10000], Step [15/21830000], Gate Loss: 0.7452, Mel Loss: 0.0635, Total Loss: 0.8087.
+Time Used: 72.941s, Estimated Time Remaining: 95961166.014s.
+
+Epoch [1/10000], Step [20/21830000], Gate Loss: 0.7569, Mel Loss: 0.0730, Total Loss: 0.8299.
+Time Used: 94.284s, Estimated Time Remaining: 95332574.061s.
+
+Epoch [1/10000], Step [5/21830000], Gate Loss: 0.7829, Mel Loss: 0.3939, Total Loss: 1.1768.
+Time Used: 28.104s, Estimated Time Remaining: 96695214.629s.
+
+Epoch [1/10000], Step [10/21830000], Gate Loss: 0.7266, Mel Loss: 0.0757, Total Loss: 0.8022.
+Time Used: 49.608s, Estimated Time Remaining: 92870884.036s.
+
