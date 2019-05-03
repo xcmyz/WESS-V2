@@ -86,6 +86,11 @@ def main(args):
             mel_output, gate_predicted = model(
                 texts, embeddings, sep_lists, mels)
 
+            # print()
+            # print("mel target size:", mels.size())
+            # print("mel output size:", mel_output.size())
+            # print("gate predict:", gate_predicted.size())
+
             # Calculate loss
             total_loss, mel_loss, gate_loss = wess_loss(
                 mel_output, gate_predicted, mels, gate_target)
