@@ -8,6 +8,7 @@ from TransformerBlock import get_sinusoid_encoding_table
 # from bert_embedding import get_bert_embedding
 from layers import BERT, LinearProjection, LinearNet_TwoLayer, FFN, LinearProjection
 from text.symbols import symbols
+import hparams as hp
 # print(len(symbols))
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -283,6 +284,8 @@ class WESS_Decoder(nn.Module):
     """
 
     def __init__(self,
+                 vocab_max_size=2000,
+                 embedding_size=256,
                  decoder_input_hidden=256,
                  decoder_prenet_word_hidden=384,
                  decoder_prenet_word_output=256,
@@ -307,6 +310,8 @@ class WESS_Decoder(nn.Module):
         """
 
         super(WESS_Decoder, self).__init__()
+        self.vocab_max_size = vocab_max_size
+        self.embedding_size = embedding_size
         self.decoder_input_hidden = decoder_input_hidden
         self.decoder_prenet_word_hidden = decoder_prenet_word_hidden
         self.decoder_prenet_word_output = decoder_prenet_word_output
@@ -327,11 +332,15 @@ class WESS_Decoder(nn.Module):
         self.gate_threshold = gate_threshold
         self.dropout = dropout
 
+        # Position Embedding
+        self.position_embedding = nn.Embedding.from_pretrained(
+            get_sinusoid_encoding_table(self.vocab_max_size, self.embedding_size), freeze=True)
+
         # PreNet
         self.PreNet_word = LinearNet_TwoLayer(
-            self.decoder_input_hidden, self.decoder_prenet_word_hidden, self.decoder_prenet_word_output)
+            self.decoder_postnet_output, self.decoder_prenet_word_hidden, self.decoder_prenet_word_output)
         self.PreNet_alpha = LinearNet_TwoLayer(
-            self.decoder_input_hidden, self.decoder_prenet_alpha_hidden, self.decoder_prenet_alpha_output)
+            self.decoder_postnet_output, self.decoder_prenet_alpha_hidden, self.decoder_prenet_alpha_output)
 
         # Decoder Block
         self.decoder_block_word = DecoderBlock(self.decoder_input_hidden,
@@ -365,12 +374,17 @@ class WESS_Decoder(nn.Module):
             mel_output = list()
             mel_first_input = torch.zeros(mel_target.size(
                 0), self.decode_per_step, mel_target.size(2)).to(device)
+
+            # print(mel_first_input.size())
+
             mel_first_input_word = self.PreNet_word(mel_first_input)
             mel_first_input_alpha = self.PreNet_alpha(mel_first_input)
 
             pos_input = torch.stack([torch.Tensor([i for i in range(5)]).to(
                 device) for _ in range(mel_target.size(0))]).long()
             pos_embedding = self.position_embedding(pos_input)
+
+            # print("pos_emb:", pos_embedding.size())
 
             mel_first_input_word = mel_first_input_word + pos_embedding
             mel_first_input_alpha = mel_first_input_alpha + pos_embedding
@@ -394,7 +408,7 @@ class WESS_Decoder(nn.Module):
 
             mel_output.append(decoder_first_output)
 
-            for cnt_pos in range((mel_target.size(1)//5) - 1):
+            for cnt_pos in range(mel_target.size(1) // 5):
                 # Position Embedding
                 # position = cnt_pos + 1
                 # pos_input = torch.stack(
@@ -432,6 +446,7 @@ class WESS_Decoder(nn.Module):
 
             mel_output = torch.cat(mel_output, 1)
             gate_predicted = self.linear_projection(mel_output)
+            gate_predicted = gate_predicted.squeeze(2)
 
             return mel_output, gate_predicted
 
@@ -440,13 +455,18 @@ class WESS_Decoder(nn.Module):
             # Test One Text Once
             # Init
             mel_output = list()
-            mel_first_input = torch.zeros(1, 5, 80)
+            mel_first_input = torch.zeros(1, 5, 80).to(device)
             mel_first_input_word = self.PreNet_word(mel_first_input)
             mel_first_input_alpha = self.PreNet_alpha(mel_first_input)
 
-            pos_input = torch.stack([torch.Tensor([i for i in range(5)]).to(
-                device) for _ in range(mel_target.size(0))]).long()
+            pos_input = torch.stack(
+                [torch.Tensor([i for i in range(5)]).to(device) for _ in range(1)]).long()
+
+            # print(pos_input.size())
+
             pos_embedding = self.position_embedding(pos_input)
+
+            # print(pos_embedding.size())
 
             mel_first_input_word = mel_first_input_word + pos_embedding
             mel_first_input_alpha = mel_first_input_alpha + pos_embedding
@@ -470,9 +490,9 @@ class WESS_Decoder(nn.Module):
 
             mel_output.append(decoder_first_output)
 
-            for cnt_pos in range((self.max_len//5) - 1):
+            for cnt_pos in range(self.max_decode_length // 5):
 
-                if (cnt_pos + 1) == (self.max_len//5) - 1:
+                if (cnt_pos + 1) == self.max_decode_length // 5:
                     print("Warning! Reached max decoder steps.")
 
                 # Position Embedding
@@ -505,9 +525,16 @@ class WESS_Decoder(nn.Module):
 
                 mel_output.append(model_output)
 
-                gate_predicted = self.linear_projection(mel_output)
+                # print(model_output.size())
 
-                if max(gate_predicted[0]) > self.gate_threshold:
+                gate_predicted = self.linear_projection(model_output)
+
+                # print(gate_predicted.size())
+                # print(gate_predicted)
+                # print(max(gate_predicted[0]).data)
+
+                if max(gate_predicted[0]).data > self.gate_threshold:
+                    # print(max(gate_predicted[0]).data)
                     break
 
             mel_output = torch.cat(mel_output, 1)
@@ -528,6 +555,10 @@ class WESS(nn.Module):
     def forward(self, x, bert_embeddings, gate_for_words, mel_target=None):
         encoder_output_word, encoder_output_alpha = self.encoder(
             x, bert_embeddings, gate_for_words)
+
+        # print("encoder output word:", encoder_output_word.size())
+        # print("encoder output alpha:", encoder_output_alpha.size())
+
         output = self.decoder(encoder_output_word,
                               encoder_output_alpha, mel_target)
 
