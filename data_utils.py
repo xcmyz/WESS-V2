@@ -3,7 +3,7 @@ from torch.utils.data import Dataset, DataLoader
 from text import text_to_sequence, symbols
 from layers import get_bert_embedding
 import hparams
-from WESS_V2 import WESS_Encoder
+from WESS_V2 import WESS_Encoder, WESS_Decoder, WESS
 
 import numpy as np
 from pytorch_pretrained_bert import BertTokenizer, BertModel, BertForMaskedLM
@@ -311,6 +311,12 @@ if __name__ == "__main__":
     WESS_Encoder = WESS_Encoder().to(device)
     print(WESS_Encoder)
 
+    # Test WESS
+    test_WESS = WESS().to(device)
+    # test_WESS = test_WESS.train()
+    test_WESS = test_WESS.eval()
+    print(test_WESS)
+
     for i, data_of_batch in enumerate(training_loader):
         # print(data)
         a = 0
@@ -333,11 +339,21 @@ if __name__ == "__main__":
         # Test Encoder
         texts = torch.from_numpy(texts).long().to(device)
 
-        output = WESS_Encoder(texts, embeddings, sep_lists)
+        # output = WESS_Encoder(texts, embeddings, sep_lists)
 
-        print()
-        print("1:", output[0].size())
-        print("2:", output[1].size())
+        # print()
+        # print("1:", output[0].size())
+        # print("2:", output[1].size())
+
+        # Test WESS
+        mels = torch.from_numpy(mels).float().to(device)
+
+        # output = test_WESS(texts, embeddings, sep_lists, mels)
+        output = test_WESS(texts, embeddings, sep_lists, mels)
+
+        print("mels:", mels.size())
+        print("output:", output[0].size())
+        # print("gate predict:", output[1].size())
 
         # print("test bert embeddings")
         # for embedding in embeddings:
